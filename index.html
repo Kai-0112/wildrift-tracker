@@ -31,6 +31,12 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto}
 .kda-group label{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;text-align:center}
 .kda-group input{background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;color:var(--text);font-size:18px;font-weight:500;font-family:'DM Mono',monospace;text-align:center;padding:10px 4px;width:100%}
 .kda-group input:focus{outline:none;border-color:rgba(200,241,53,0.4)}
+.mark-row{display:flex;gap:8px;justify-content:center;margin-top:4px}
+.mark-btn{width:44px;height:44px;border-radius:8px;border:0.5px solid var(--border);background:var(--surface2);font-size:15px;font-weight:500;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;transition:all 0.15s}
+.mark-btn.on-pos{background:var(--win-dim);border-color:var(--win);color:var(--win)}
+.mark-btn.on-neg{background:var(--lose-dim);border-color:var(--lose);color:var(--lose)}
+.mark-btn.on-zero{background:rgba(251,191,36,0.15);border-color:var(--amber);color:var(--amber)}
+.mark-hint{font-size:11px;color:var(--muted);text-align:center;margin-top:8px;font-family:'DM Mono',monospace;line-height:1.6}
 .mood-row{display:flex;gap:8px;justify-content:space-between}
 .mood-btn{flex:1;padding:10px 4px;border-radius:8px;border:0.5px solid var(--border);background:var(--surface2);font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;transition:all 0.15s}
 .mood-btn.on{background:rgba(251,191,36,0.15);border-color:var(--amber);color:var(--amber)}
@@ -49,9 +55,10 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto}
 .match-info{flex:1;min-width:0}
 .match-kda{font-size:15px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text)}
 .match-meta{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
-.match-lp{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
-.match-lp.pos{color:var(--win)}
-.match-lp.neg{color:var(--lose)}
+.match-mark{font-family:'DM Mono',monospace;font-size:16px;font-weight:500;min-width:28px;text-align:center}
+.match-mark.pos{color:var(--win)}
+.match-mark.neg{color:var(--lose)}
+.match-mark.zero{color:var(--amber)}
 .del-btn{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px;line-height:1}
 .stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
 .stat-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:14px}
@@ -70,6 +77,7 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto}
 .insufficient{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:6px}
 .section-title{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;margin:16px 0 10px}
 .empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:14px;line-height:1.8}
+.tier-row{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:4px}
 </style>
 </head>
 <body>
@@ -82,6 +90,7 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto}
   <button class="tab" onclick="switchTab('history')">歷史</button>
   <button class="tab" onclick="switchTab('analysis')">分析</button>
 </div>
+
 <div id="tab-record" class="section active">
   <div class="card">
     <div class="card-label">勝負</div>
@@ -90,15 +99,29 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto}
       <button class="result-btn" id="btn-lose" onclick="setResult('lose')">敗北</button>
     </div>
   </div>
+
   <div class="card">
-    <div class="card-label">K / D / A / LP</div>
-    <div class="kda-row">
+    <div class="card-label">K / D / A</div>
+    <div class="kda-row" style="grid-template-columns:1fr 1fr 1fr">
       <div class="kda-group"><label>K</label><input type="number" id="f-k" value="0" min="0" max="30"></div>
       <div class="kda-group"><label>D</label><input type="number" id="f-d" value="0" min="0" max="30"></div>
       <div class="kda-group"><label>A</label><input type="number" id="f-a" value="0" min="0" max="30"></div>
-      <div class="kda-group"><label>LP</label><input type="number" id="f-lp" value="0"></div>
     </div>
   </div>
+
+  <div class="card">
+    <div class="card-label">星記變化</div>
+    <div class="mark-row">
+      <button class="mark-btn" id="mark-p2" onclick="setMark(2)">+2</button>
+      <button class="mark-btn" id="mark-p1" onclick="setMark(1)">+1</button>
+      <button class="mark-btn" id="mark-0" onclick="setMark(0)">0</button>
+      <button class="mark-btn" id="mark-n1" onclick="setMark(-1)">-1</button>
+    </div>
+    <div class="mark-hint">
+      +2 韌性滿贏球・+1 一般勝利・0 有保護盾・-1 一般敗北
+    </div>
+  </div>
+
   <div class="card">
     <div class="card-label">自身狀態</div>
     <div style="margin-bottom:12px">
@@ -123,6 +146,7 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto}
       </div>
     </div>
   </div>
+
   <div class="card">
     <div class="card-label">隊伍狀況</div>
     <div style="margin-bottom:12px">
@@ -140,36 +164,166 @@ body{display:flex;flex-direction:column;max-width:480px;margin:0 auto}
       </div>
     </div>
   </div>
+
   <button class="submit-btn" onclick="submitMatch()">儲存這場</button>
   <div class="toast" id="toast"></div>
 </div>
+
 <div id="tab-history" class="section">
   <div id="history-list"></div>
 </div>
+
 <div id="tab-analysis" class="section">
   <div class="stat-grid" id="stat-grid"></div>
   <div class="section-title">各因素對勝率的影響</div>
   <div id="factor-list"></div>
 </div>
+
 <script>
-let st={result:null,mood:3,familiar:null,team:null,enemy:null};
+let st={result:null,mood:3,familiar:null,team:null,enemy:null,mark:null};
 let matches=[];
+
 function load(){try{matches=JSON.parse(localStorage.getItem('wr-matches')||'[]')}catch(e){matches=[]}setMood(3);updateStreak()}
 function save(){localStorage.setItem('wr-matches',JSON.stringify(matches))}
-function updateStreak(){if(!matches.length){document.getElementById('streak-display').textContent='';return}let streak=0,last=matches[matches.length-1].result;for(let i=matches.length-1;i>=0;i--){if(matches[i].result===last)streak++;else break}const el=document.getElementById('streak-display');if(streak>=2)el.textContent=(last==='win'?'連勝':'連敗')+' '+streak+'場';else el.textContent=''}
-function switchTab(t){document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['record','history','analysis'][i]===t));document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById('tab-'+t).classList.add('active');if(t==='history')renderHistory();if(t==='analysis')renderAnalysis()}
-function setResult(r){st.result=r;document.getElementById('btn-win').className='result-btn'+(r==='win'?' win':'');document.getElementById('btn-lose').className='result-btn'+(r==='lose'?' lose':'')}
+
+function updateStreak(){
+  if(!matches.length){document.getElementById('streak-display').textContent='';return}
+  let streak=0,last=matches[matches.length-1].result;
+  for(let i=matches.length-1;i>=0;i--){if(matches[i].result===last)streak++;else break}
+  const el=document.getElementById('streak-display');
+  if(streak>=2)el.textContent=(last==='win'?'連勝':'連敗')+' '+streak+'場';
+  else el.textContent=''
+}
+
+function switchTab(t){
+  document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['record','history','analysis'][i]===t));
+  document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));
+  document.getElementById('tab-'+t).classList.add('active');
+  if(t==='history')renderHistory();
+  if(t==='analysis')renderAnalysis()
+}
+
+function setResult(r){
+  st.result=r;
+  document.getElementById('btn-win').className='result-btn'+(r==='win'?' win':'');
+  document.getElementById('btn-lose').className='result-btn'+(r==='lose'?' lose':'');
+  if(r==='win'&&st.mark===null)setMark(1);
+  if(r==='lose'&&st.mark===null)setMark(-1);
+}
+
+function setMark(v){
+  st.mark=v;
+  ['p2','p1','0','n1'].forEach(k=>{
+    const id='mark-'+(k==='n1'?'n1':k);
+    const val=k==='p2'?2:k==='p1'?1:k==='0'?0:-1;
+    const el=document.getElementById('mark-'+k);
+    if(!el)return;
+    el.className='mark-btn'+(val===v?(val>0?' on-pos':val===0?' on-zero':' on-neg'):'');
+  });
+}
+
 function setMood(v){st.mood=v;document.querySelectorAll('#mood-row .mood-btn').forEach(b=>b.classList.toggle('on',+b.dataset.v<=v))}
 function setFamiliar(v){st.familiar=v;document.getElementById('btn-fam-y').className='tog-btn'+(v===true?' on-yes':'');document.getElementById('btn-fam-n').className='tog-btn'+(v===false?' on-bad':'')}
 function setTeam(v){st.team=v;document.getElementById('btn-team-good').className='tog-btn'+(v==='good'?' on-good':'');document.getElementById('btn-team-bad').className='tog-btn'+(v==='bad'?' on-bad':'')}
 function setEnemy(v){st.enemy=v;document.getElementById('btn-enemy-n').className='tog-btn'+(v===false?' on-good':'');document.getElementById('btn-enemy-y').className='tog-btn'+(v===true?' on-bad':'')}
+
 function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;setTimeout(()=>el.textContent='',2000)}
-function submitMatch(){if(!st.result){showToast('請選擇勝負');return}if(st.familiar===null){showToast('請選擇是否用熟練英雄');return}if(!st.team){showToast('請選擇隊友狀況');return}if(st.enemy===null){showToast('請選擇對手狀況');return}const m={id:Date.now(),date:new Date().toLocaleDateString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}),result:st.result,k:+document.getElementById('f-k').value,d:+document.getElementById('f-d').value,a:+document.getElementById('f-a').value,lp:+document.getElementById('f-lp').value,nth:+document.getElementById('f-nth').value,mood:st.mood,familiar:st.familiar,team:st.team,enemy:st.enemy};matches.push(m);save();showToast('已儲存！');resetForm();updateStreak()}
-function resetForm(){st={result:null,mood:3,familiar:null,team:null,enemy:null};document.getElementById('btn-win').className='result-btn';document.getElementById('btn-lose').className='result-btn';['f-k','f-d','f-a'].forEach(id=>document.getElementById(id).value=0);document.getElementById('f-lp').value=0;document.getElementById('f-nth').value=matches.length?matches[matches.length-1].nth:1;setMood(3);['btn-fam-y','btn-fam-n','btn-team-good','btn-team-bad','btn-enemy-n','btn-enemy-y'].forEach(id=>document.getElementById(id).className='tog-btn')}
+
+function submitMatch(){
+  if(!st.result){showToast('請選擇勝負');return}
+  if(st.mark===null){showToast('請選擇星記變化');return}
+  if(st.familiar===null){showToast('請選擇是否用熟練英雄');return}
+  if(!st.team){showToast('請選擇隊友狀況');return}
+  if(st.enemy===null){showToast('請選擇對手狀況');return}
+  const m={
+    id:Date.now(),
+    date:new Date().toLocaleDateString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}),
+    result:st.result,
+    k:+document.getElementById('f-k').value,
+    d:+document.getElementById('f-d').value,
+    a:+document.getElementById('f-a').value,
+    mark:st.mark,
+    nth:+document.getElementById('f-nth').value,
+    mood:st.mood,
+    familiar:st.familiar,
+    team:st.team,
+    enemy:st.enemy
+  };
+  matches.push(m);save();showToast('已儲存！');resetForm();updateStreak()
+}
+
+function resetForm(){
+  st={result:null,mood:3,familiar:null,team:null,enemy:null,mark:null};
+  document.getElementById('btn-win').className='result-btn';
+  document.getElementById('btn-lose').className='result-btn';
+  ['mark-p2','mark-p1','mark-0','mark-n1'].forEach(id=>{const el=document.getElementById(id);if(el)el.className='mark-btn'});
+  ['f-k','f-d','f-a'].forEach(id=>document.getElementById(id).value=0);
+  document.getElementById('f-nth').value=matches.length?matches[matches.length-1].nth:1;
+  setMood(3);
+  ['btn-fam-y','btn-fam-n','btn-team-good','btn-team-bad','btn-enemy-n','btn-enemy-y'].forEach(id=>document.getElementById(id).className='tog-btn')
+}
+
 function deleteMatch(id){matches=matches.filter(m=>m.id!==id);save();updateStreak();renderHistory()}
-function renderHistory(){const el=document.getElementById('history-list');if(!matches.length){el.innerHTML='<div class="empty">還沒有記錄<br>打完第一場後回來填吧</div>';return}el.innerHTML=[...matches].reverse().map(m=>`<div class="match-row"><div class="match-badge ${m.result}">${m.result==='win'?'W':'L'}</div><div class="match-info"><div class="match-kda">${m.k}/${m.d}/${m.a}</div><div class="match-meta">${m.date}・情緒${m.mood}/5・${m.familiar?'熟練':'練習'}英雄</div></div><div class="match-lp ${m.lp>=0?'pos':'neg'}">${m.lp>=0?'+':''}${m.lp}</div><button class="del-btn" onclick="deleteMatch(${m.id})">×</button></div>`).join('')}
+
+function renderHistory(){
+  const el=document.getElementById('history-list');
+  if(!matches.length){el.innerHTML='<div class="empty">還沒有記錄<br>打完第一場後回來填吧</div>';return}
+  el.innerHTML=[...matches].reverse().map(m=>{
+    const markVal=m.mark!==undefined?m.mark:(m.lp||0);
+    const markClass=markVal>0?'pos':markVal<0?'neg':'zero';
+    const markTxt=markVal>0?'+'+markVal:markVal;
+    return`<div class="match-row">
+      <div class="match-badge ${m.result}">${m.result==='win'?'W':'L'}</div>
+      <div class="match-info">
+        <div class="match-kda">${m.k}/${m.d}/${m.a}</div>
+        <div class="match-meta">${m.date}・情緒${m.mood}/5・${m.familiar?'熟練':'練習'}英雄</div>
+      </div>
+      <div class="match-mark ${markClass}">${markTxt}★</div>
+      <button class="del-btn" onclick="deleteMatch(${m.id})">×</button>
+    </div>`}).join('')
+}
+
 function wr(arr){if(!arr.length)return null;return Math.round(arr.filter(m=>m.result==='win').length/arr.length*100)}
-function renderAnalysis(){const total=matches.length;if(!total){document.getElementById('stat-grid').innerHTML='<div class="empty" style="grid-column:1/-1">多記錄幾場後<br>這裡會顯示你的分析</div>';document.getElementById('factor-list').innerHTML='';return}const wins=matches.filter(m=>m.result==='win').length;const lpSum=matches.reduce((s,m)=>s+m.lp,0);const avgKDA=matches.reduce((s,m)=>s+(m.d===0?(m.k+m.a):((m.k+m.a)/m.d)),0)/total;document.getElementById('stat-grid').innerHTML=`<div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">總場數</div></div><div class="stat-card"><div class="stat-val">${Math.round(wins/total*100)}%</div><div class="stat-lbl">整體勝率</div></div><div class="stat-card"><div class="stat-val" style="color:${lpSum>=0?'var(--win)':'var(--lose)'}">${lpSum>=0?'+':''}${lpSum}</div><div class="stat-lbl">LP 累計</div></div><div class="stat-card"><div class="stat-val">${avgKDA.toFixed(1)}</div><div class="stat-lbl">平均 KDA</div></div>`;const factors=[{name:'熟練 vs 練習英雄',type:'你能控制',ctrl:true,a:{n:'熟練',d:matches.filter(m=>m.familiar===true)},b:{n:'練習',d:matches.filter(m=>m.familiar===false)}},{name:'情緒好(4-5) vs 差(1-2)',type:'你能控制',ctrl:true,a:{n:'狀態好',d:matches.filter(m=>m.mood>=4)},b:{n:'狀態差',d:matches.filter(m=>m.mood<=2)}},{name:'第1場 vs 第4場後',type:'你能控制',ctrl:true,a:{n:'第1場',d:matches.filter(m=>m.nth===1)},b:{n:'第4場+',d:matches.filter(m=>m.nth>=4)}},{name:'隊友正常 vs 失常',type:'你不能控制',ctrl:false,a:{n:'隊友正常',d:matches.filter(m=>m.team==='good')},b:{n:'隊友失常',d:matches.filter(m=>m.team==='bad')}},{name:'對手無強勢 vs 有強勢',type:'你不能控制',ctrl:false,a:{n:'對手一般',d:matches.filter(m=>m.enemy===false)},b:{n:'對手強勢',d:matches.filter(m=>m.enemy===true)}}];document.getElementById('factor-list').innerHTML=factors.map(f=>{const wrA=wr(f.a.d),wrB=wr(f.b.d);const insuf=f.a.d.length<3||f.b.d.length<3;const diff=wrA!==null&&wrB!==null?Math.abs(wrA-wrB):null;const col=f.ctrl?'var(--accent)':'var(--lose)';return`<div class="factor-card"><div class="factor-header"><div><div class="factor-name">${f.name}</div><div class="factor-type">${f.type}</div></div><div class="factor-diff ${f.ctrl?'ctrl':'noctrl'}">${diff!==null?diff+'%':'—'}</div></div>${insuf?'<div class="insufficient">資料不足，需各至少 3 場</div>':`<div class="bar-row"><span style="min-width:52px">${f.a.n}</span><div class="bar-track"><div class="bar-fill" style="width:${wrA}%;background:${col}"></div></div><span>${wrA}%</span></div><div class="bar-row"><span style="min-width:52px">${f.b.n}</span><div class="bar-track"><div class="bar-fill" style="width:${wrB||0}%;background:${col};opacity:0.3"></div></div><span>${wrB||0}%</span></div>`}</div>`}).join('')}
+
+function renderAnalysis(){
+  const total=matches.length;
+  if(!total){
+    document.getElementById('stat-grid').innerHTML='<div class="empty" style="grid-column:1/-1">多記錄幾場後<br>這裡會顯示你的分析</div>';
+    document.getElementById('factor-list').innerHTML='';return
+  }
+  const wins=matches.filter(m=>m.result==='win').length;
+  const markSum=matches.reduce((s,m)=>s+(m.mark!==undefined?m.mark:(m.lp||0)),0);
+  const avgKDA=matches.reduce((s,m)=>s+(m.d===0?(m.k+m.a):((m.k+m.a)/m.d)),0)/total;
+  document.getElementById('stat-grid').innerHTML=`
+    <div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">總場數</div></div>
+    <div class="stat-card"><div class="stat-val">${Math.round(wins/total*100)}%</div><div class="stat-lbl">整體勝率</div></div>
+    <div class="stat-card"><div class="stat-val" style="color:${markSum>=0?'var(--win)':'var(--lose)'}">${markSum>=0?'+':''}${markSum}★</div><div class="stat-lbl">星記累計</div></div>
+    <div class="stat-card"><div class="stat-val">${avgKDA.toFixed(1)}</div><div class="stat-lbl">平均 KDA</div></div>`;
+
+  const factors=[
+    {name:'熟練 vs 練習英雄',type:'你能控制',ctrl:true,a:{n:'熟練',d:matches.filter(m=>m.familiar===true)},b:{n:'練習',d:matches.filter(m=>m.familiar===false)}},
+    {name:'情緒好(4-5) vs 差(1-2)',type:'你能控制',ctrl:true,a:{n:'狀態好',d:matches.filter(m=>m.mood>=4)},b:{n:'狀態差',d:matches.filter(m=>m.mood<=2)}},
+    {name:'第1場 vs 第4場後',type:'你能控制',ctrl:true,a:{n:'第1場',d:matches.filter(m=>m.nth===1)},b:{n:'第4場+',d:matches.filter(m=>m.nth>=4)}},
+    {name:'隊友正常 vs 失常',type:'你不能控制',ctrl:false,a:{n:'隊友正常',d:matches.filter(m=>m.team==='good')},b:{n:'隊友失常',d:matches.filter(m=>m.team==='bad')}},
+    {name:'對手無強勢 vs 有強勢',type:'你不能控制',ctrl:false,a:{n:'對手一般',d:matches.filter(m=>m.enemy===false)},b:{n:'對手強勢',d:matches.filter(m=>m.enemy===true)}}
+  ];
+
+  document.getElementById('factor-list').innerHTML=factors.map(f=>{
+    const wrA=wr(f.a.d),wrB=wr(f.b.d);
+    const insuf=f.a.d.length<3||f.b.d.length<3;
+    const diff=wrA!==null&&wrB!==null?Math.abs(wrA-wrB):null;
+    const col=f.ctrl?'var(--accent)':'var(--lose)';
+    return`<div class="factor-card">
+      <div class="factor-header">
+        <div><div class="factor-name">${f.name}</div><div class="factor-type">${f.type}</div></div>
+        <div class="factor-diff ${f.ctrl?'ctrl':'noctrl'}">${diff!==null?diff+'%':'—'}</div>
+      </div>
+      ${insuf?'<div class="insufficient">資料不足，需各至少 3 場</div>':`
+      <div class="bar-row"><span style="min-width:52px">${f.a.n}</span><div class="bar-track"><div class="bar-fill" style="width:${wrA}%;background:${col}"></div></div><span>${wrA}%</span></div>
+      <div class="bar-row"><span style="min-width:52px">${f.b.n}</span><div class="bar-track"><div class="bar-fill" style="width:${wrB||0}%;background:${col};opacity:0.3"></div></div><span>${wrB||0}%</span></div>`}
+    </div>`}).join('')
+}
+
 load();
 </script>
 </body>
