@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<title>峽谷日誌</title>
+<link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=Noto+Sans+TC:wght@400;500&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#0e0f11;--surface:#16181c;--surface2:#1e2128;--border:rgba(255,255,255,0.07);--text:#e8e9eb;--muted:#6b7280;--accent:#c8f135;--accent-dim:rgba(200,241,53,0.12);--win:#4ade80;--win-dim:rgba(74,222,128,0.12);--lose:#f87171;--lose-dim:rgba(248,113,113,0.12);--amber:#fbbf24}
+*{box-sizing:border-box;margin:0;padding:0;-webkit-tap-highlight-color:transparent}
+html,body{height:100%;background:var(--bg);color:var(--text);font-family:'Noto Sans TC',sans-serif;font-size:15px}
+body{display:flex;flex-direction:column;max-width:480px;margin:0 auto}
+.header{padding:20px 20px 0;display:flex;justify-content:space-between;align-items:flex-end}
+.header h1{font-family:'DM Mono',monospace;font-size:20px;font-weight:500;color:var(--accent);letter-spacing:-0.5px}
+.header .streak{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace}
+.tabs{display:flex;padding:16px 20px 0;gap:4px}
+.tab{flex:1;padding:8px;font-size:13px;font-weight:500;color:var(--muted);background:none;border:0.5px solid transparent;border-radius:8px;cursor:pointer;transition:all 0.15s;font-family:'Noto Sans TC',sans-serif}
+.tab.active{color:var(--accent);background:var(--accent-dim);border-color:rgba(200,241,53,0.2)}
+.section{display:none;flex:1;overflow-y:auto;padding:16px 20px 100px}
+.section.active{display:block}
+.card{background:var(--surface);border:0.5px solid var(--border);border-radius:14px;padding:16px;margin-bottom:12px}
+.card-label{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:12px}
+.result-btns{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.result-btn{padding:14px;border-radius:10px;border:0.5px solid var(--border);background:var(--surface2);font-size:15px;font-weight:500;cursor:pointer;color:var(--muted);transition:all 0.15s;font-family:'Noto Sans TC',sans-serif}
+.result-btn.win{background:var(--win-dim);border-color:var(--win);color:var(--win)}
+.result-btn.lose{background:var(--lose-dim);border-color:var(--lose);color:var(--lose)}
+.kda-row{display:grid;grid-template-columns:1fr 1fr 1fr 1fr;gap:8px}
+.kda-group{display:flex;flex-direction:column;gap:6px}
+.kda-group label{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;text-align:center}
+.kda-group input{background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;color:var(--text);font-size:18px;font-weight:500;font-family:'DM Mono',monospace;text-align:center;padding:10px 4px;width:100%}
+.kda-group input:focus{outline:none;border-color:rgba(200,241,53,0.4)}
+.mood-row{display:flex;gap:8px;justify-content:space-between}
+.mood-btn{flex:1;padding:10px 4px;border-radius:8px;border:0.5px solid var(--border);background:var(--surface2);font-size:13px;font-weight:500;color:var(--muted);cursor:pointer;font-family:'DM Mono',monospace;transition:all 0.15s}
+.mood-btn.on{background:rgba(251,191,36,0.15);border-color:var(--amber);color:var(--amber)}
+.tog-pair{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.tog-btn{padding:10px;border-radius:8px;border:0.5px solid var(--border);background:var(--surface2);font-size:13px;color:var(--muted);cursor:pointer;font-family:'Noto Sans TC',sans-serif;transition:all 0.15s}
+.tog-btn.on-good{background:var(--win-dim);border-color:var(--win);color:var(--win)}
+.tog-btn.on-bad{background:var(--lose-dim);border-color:var(--lose);color:var(--lose)}
+.tog-btn.on-yes{background:var(--accent-dim);border-color:var(--accent);color:var(--accent)}
+.submit-btn{width:100%;padding:16px;border-radius:12px;background:var(--accent);color:#0e0f11;font-size:15px;font-weight:500;border:none;cursor:pointer;font-family:'Noto Sans TC',sans-serif;margin-top:4px;transition:opacity 0.15s}
+.submit-btn:active{opacity:0.8}
+.toast{text-align:center;font-size:13px;color:var(--muted);padding:8px;min-height:36px;font-family:'DM Mono',monospace}
+.match-row{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:8px;display:flex;align-items:center;gap:12px}
+.match-badge{width:36px;height:36px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:500;flex-shrink:0;font-family:'DM Mono',monospace}
+.match-badge.win{background:var(--win-dim);color:var(--win)}
+.match-badge.lose{background:var(--lose-dim);color:var(--lose)}
+.match-info{flex:1;min-width:0}
+.match-kda{font-size:15px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text)}
+.match-meta{font-size:12px;color:var(--muted);margin-top:2px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.match-lp{font-family:'DM Mono',monospace;font-size:14px;font-weight:500}
+.match-lp.pos{color:var(--win)}
+.match-lp.neg{color:var(--lose)}
+.del-btn{background:none;border:none;color:var(--muted);font-size:18px;cursor:pointer;padding:4px;line-height:1}
+.stat-grid{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-bottom:16px}
+.stat-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:14px}
+.stat-val{font-size:24px;font-weight:500;font-family:'DM Mono',monospace;color:var(--text)}
+.stat-lbl{font-size:12px;color:var(--muted);margin-top:4px}
+.factor-card{background:var(--surface);border:0.5px solid var(--border);border-radius:12px;padding:14px;margin-bottom:8px}
+.factor-header{display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:10px}
+.factor-name{font-size:13px;color:var(--text);font-weight:500}
+.factor-type{font-size:11px;color:var(--muted);margin-top:2px}
+.factor-diff{font-size:22px;font-weight:500;font-family:'DM Mono',monospace}
+.factor-diff.ctrl{color:var(--accent)}
+.factor-diff.noctrl{color:var(--lose)}
+.bar-row{display:flex;align-items:center;gap:8px;margin-top:4px;font-size:12px;color:var(--muted);font-family:'DM Mono',monospace}
+.bar-track{flex:1;height:6px;background:var(--surface2);border-radius:3px;overflow:hidden}
+.bar-fill{height:100%;border-radius:3px}
+.insufficient{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:6px}
+.section-title{font-size:11px;color:var(--muted);font-family:'DM Mono',monospace;letter-spacing:0.08em;text-transform:uppercase;margin:16px 0 10px}
+.empty{text-align:center;padding:3rem 1rem;color:var(--muted);font-size:14px;line-height:1.8}
+</style>
+</head>
+<body>
+<div class="header">
+  <h1>峽谷日誌</h1>
+  <div class="streak" id="streak-display"></div>
+</div>
+<div class="tabs">
+  <button class="tab active" onclick="switchTab('record')">記錄</button>
+  <button class="tab" onclick="switchTab('history')">歷史</button>
+  <button class="tab" onclick="switchTab('analysis')">分析</button>
+</div>
+<div id="tab-record" class="section active">
+  <div class="card">
+    <div class="card-label">勝負</div>
+    <div class="result-btns">
+      <button class="result-btn" id="btn-win" onclick="setResult('win')">勝利</button>
+      <button class="result-btn" id="btn-lose" onclick="setResult('lose')">敗北</button>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">K / D / A / LP</div>
+    <div class="kda-row">
+      <div class="kda-group"><label>K</label><input type="number" id="f-k" value="0" min="0" max="30"></div>
+      <div class="kda-group"><label>D</label><input type="number" id="f-d" value="0" min="0" max="30"></div>
+      <div class="kda-group"><label>A</label><input type="number" id="f-a" value="0" min="0" max="30"></div>
+      <div class="kda-group"><label>LP</label><input type="number" id="f-lp" value="0"></div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">自身狀態</div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">今天第幾場</div>
+      <input type="number" id="f-nth" value="1" min="1" max="20" style="background:var(--surface2);border:0.5px solid var(--border);border-radius:8px;color:var(--text);font-size:18px;font-family:'DM Mono',monospace;text-align:center;padding:10px;width:80px">
+    </div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">賽前狀態（1差→5好）</div>
+      <div class="mood-row" id="mood-row">
+        <button class="mood-btn" data-v="1" onclick="setMood(1)">1</button>
+        <button class="mood-btn" data-v="2" onclick="setMood(2)">2</button>
+        <button class="mood-btn" data-v="3" onclick="setMood(3)">3</button>
+        <button class="mood-btn" data-v="4" onclick="setMood(4)">4</button>
+        <button class="mood-btn" data-v="5" onclick="setMood(5)">5</button>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">使用熟練英雄？</div>
+      <div class="tog-pair">
+        <button class="tog-btn" id="btn-fam-y" onclick="setFamiliar(true)">是</button>
+        <button class="tog-btn" id="btn-fam-n" onclick="setFamiliar(false)">否</button>
+      </div>
+    </div>
+  </div>
+  <div class="card">
+    <div class="card-label">隊伍狀況</div>
+    <div style="margin-bottom:12px">
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">隊友整體表現</div>
+      <div class="tog-pair">
+        <button class="tog-btn" id="btn-team-good" onclick="setTeam('good')">正常</button>
+        <button class="tog-btn" id="btn-team-bad" onclick="setTeam('bad')">有人失常</button>
+      </div>
+    </div>
+    <div>
+      <div style="font-size:13px;color:var(--muted);margin-bottom:8px">對手有強勢英雄？</div>
+      <div class="tog-pair">
+        <button class="tog-btn" id="btn-enemy-n" onclick="setEnemy(false)">沒有</button>
+        <button class="tog-btn" id="btn-enemy-y" onclick="setEnemy(true)">有</button>
+      </div>
+    </div>
+  </div>
+  <button class="submit-btn" onclick="submitMatch()">儲存這場</button>
+  <div class="toast" id="toast"></div>
+</div>
+<div id="tab-history" class="section">
+  <div id="history-list"></div>
+</div>
+<div id="tab-analysis" class="section">
+  <div class="stat-grid" id="stat-grid"></div>
+  <div class="section-title">各因素對勝率的影響</div>
+  <div id="factor-list"></div>
+</div>
+<script>
+let st={result:null,mood:3,familiar:null,team:null,enemy:null};
+let matches=[];
+function load(){try{matches=JSON.parse(localStorage.getItem('wr-matches')||'[]')}catch(e){matches=[]}setMood(3);updateStreak()}
+function save(){localStorage.setItem('wr-matches',JSON.stringify(matches))}
+function updateStreak(){if(!matches.length){document.getElementById('streak-display').textContent='';return}let streak=0,last=matches[matches.length-1].result;for(let i=matches.length-1;i>=0;i--){if(matches[i].result===last)streak++;else break}const el=document.getElementById('streak-display');if(streak>=2)el.textContent=(last==='win'?'連勝':'連敗')+' '+streak+'場';else el.textContent=''}
+function switchTab(t){document.querySelectorAll('.tab').forEach((b,i)=>b.classList.toggle('active',['record','history','analysis'][i]===t));document.querySelectorAll('.section').forEach(s=>s.classList.remove('active'));document.getElementById('tab-'+t).classList.add('active');if(t==='history')renderHistory();if(t==='analysis')renderAnalysis()}
+function setResult(r){st.result=r;document.getElementById('btn-win').className='result-btn'+(r==='win'?' win':'');document.getElementById('btn-lose').className='result-btn'+(r==='lose'?' lose':'')}
+function setMood(v){st.mood=v;document.querySelectorAll('#mood-row .mood-btn').forEach(b=>b.classList.toggle('on',+b.dataset.v<=v))}
+function setFamiliar(v){st.familiar=v;document.getElementById('btn-fam-y').className='tog-btn'+(v===true?' on-yes':'');document.getElementById('btn-fam-n').className='tog-btn'+(v===false?' on-bad':'')}
+function setTeam(v){st.team=v;document.getElementById('btn-team-good').className='tog-btn'+(v==='good'?' on-good':'');document.getElementById('btn-team-bad').className='tog-btn'+(v==='bad'?' on-bad':'')}
+function setEnemy(v){st.enemy=v;document.getElementById('btn-enemy-n').className='tog-btn'+(v===false?' on-good':'');document.getElementById('btn-enemy-y').className='tog-btn'+(v===true?' on-bad':'')}
+function showToast(msg){const el=document.getElementById('toast');el.textContent=msg;setTimeout(()=>el.textContent='',2000)}
+function submitMatch(){if(!st.result){showToast('請選擇勝負');return}if(st.familiar===null){showToast('請選擇是否用熟練英雄');return}if(!st.team){showToast('請選擇隊友狀況');return}if(st.enemy===null){showToast('請選擇對手狀況');return}const m={id:Date.now(),date:new Date().toLocaleDateString('zh-TW',{month:'numeric',day:'numeric',hour:'2-digit',minute:'2-digit'}),result:st.result,k:+document.getElementById('f-k').value,d:+document.getElementById('f-d').value,a:+document.getElementById('f-a').value,lp:+document.getElementById('f-lp').value,nth:+document.getElementById('f-nth').value,mood:st.mood,familiar:st.familiar,team:st.team,enemy:st.enemy};matches.push(m);save();showToast('已儲存！');resetForm();updateStreak()}
+function resetForm(){st={result:null,mood:3,familiar:null,team:null,enemy:null};document.getElementById('btn-win').className='result-btn';document.getElementById('btn-lose').className='result-btn';['f-k','f-d','f-a'].forEach(id=>document.getElementById(id).value=0);document.getElementById('f-lp').value=0;document.getElementById('f-nth').value=matches.length?matches[matches.length-1].nth:1;setMood(3);['btn-fam-y','btn-fam-n','btn-team-good','btn-team-bad','btn-enemy-n','btn-enemy-y'].forEach(id=>document.getElementById(id).className='tog-btn')}
+function deleteMatch(id){matches=matches.filter(m=>m.id!==id);save();updateStreak();renderHistory()}
+function renderHistory(){const el=document.getElementById('history-list');if(!matches.length){el.innerHTML='<div class="empty">還沒有記錄<br>打完第一場後回來填吧</div>';return}el.innerHTML=[...matches].reverse().map(m=>`<div class="match-row"><div class="match-badge ${m.result}">${m.result==='win'?'W':'L'}</div><div class="match-info"><div class="match-kda">${m.k}/${m.d}/${m.a}</div><div class="match-meta">${m.date}・情緒${m.mood}/5・${m.familiar?'熟練':'練習'}英雄</div></div><div class="match-lp ${m.lp>=0?'pos':'neg'}">${m.lp>=0?'+':''}${m.lp}</div><button class="del-btn" onclick="deleteMatch(${m.id})">×</button></div>`).join('')}
+function wr(arr){if(!arr.length)return null;return Math.round(arr.filter(m=>m.result==='win').length/arr.length*100)}
+function renderAnalysis(){const total=matches.length;if(!total){document.getElementById('stat-grid').innerHTML='<div class="empty" style="grid-column:1/-1">多記錄幾場後<br>這裡會顯示你的分析</div>';document.getElementById('factor-list').innerHTML='';return}const wins=matches.filter(m=>m.result==='win').length;const lpSum=matches.reduce((s,m)=>s+m.lp,0);const avgKDA=matches.reduce((s,m)=>s+(m.d===0?(m.k+m.a):((m.k+m.a)/m.d)),0)/total;document.getElementById('stat-grid').innerHTML=`<div class="stat-card"><div class="stat-val">${total}</div><div class="stat-lbl">總場數</div></div><div class="stat-card"><div class="stat-val">${Math.round(wins/total*100)}%</div><div class="stat-lbl">整體勝率</div></div><div class="stat-card"><div class="stat-val" style="color:${lpSum>=0?'var(--win)':'var(--lose)'}">${lpSum>=0?'+':''}${lpSum}</div><div class="stat-lbl">LP 累計</div></div><div class="stat-card"><div class="stat-val">${avgKDA.toFixed(1)}</div><div class="stat-lbl">平均 KDA</div></div>`;const factors=[{name:'熟練 vs 練習英雄',type:'你能控制',ctrl:true,a:{n:'熟練',d:matches.filter(m=>m.familiar===true)},b:{n:'練習',d:matches.filter(m=>m.familiar===false)}},{name:'情緒好(4-5) vs 差(1-2)',type:'你能控制',ctrl:true,a:{n:'狀態好',d:matches.filter(m=>m.mood>=4)},b:{n:'狀態差',d:matches.filter(m=>m.mood<=2)}},{name:'第1場 vs 第4場後',type:'你能控制',ctrl:true,a:{n:'第1場',d:matches.filter(m=>m.nth===1)},b:{n:'第4場+',d:matches.filter(m=>m.nth>=4)}},{name:'隊友正常 vs 失常',type:'你不能控制',ctrl:false,a:{n:'隊友正常',d:matches.filter(m=>m.team==='good')},b:{n:'隊友失常',d:matches.filter(m=>m.team==='bad')}},{name:'對手無強勢 vs 有強勢',type:'你不能控制',ctrl:false,a:{n:'對手一般',d:matches.filter(m=>m.enemy===false)},b:{n:'對手強勢',d:matches.filter(m=>m.enemy===true)}}];document.getElementById('factor-list').innerHTML=factors.map(f=>{const wrA=wr(f.a.d),wrB=wr(f.b.d);const insuf=f.a.d.length<3||f.b.d.length<3;const diff=wrA!==null&&wrB!==null?Math.abs(wrA-wrB):null;const col=f.ctrl?'var(--accent)':'var(--lose)';return`<div class="factor-card"><div class="factor-header"><div><div class="factor-name">${f.name}</div><div class="factor-type">${f.type}</div></div><div class="factor-diff ${f.ctrl?'ctrl':'noctrl'}">${diff!==null?diff+'%':'—'}</div></div>${insuf?'<div class="insufficient">資料不足，需各至少 3 場</div>':`<div class="bar-row"><span style="min-width:52px">${f.a.n}</span><div class="bar-track"><div class="bar-fill" style="width:${wrA}%;background:${col}"></div></div><span>${wrA}%</span></div><div class="bar-row"><span style="min-width:52px">${f.b.n}</span><div class="bar-track"><div class="bar-fill" style="width:${wrB||0}%;background:${col};opacity:0.3"></div></div><span>${wrB||0}%</span></div>`}</div>`}).join('')}
+load();
+</script>
+</body>
+</html>
